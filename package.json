@@ -1,0 +1,13 @@
+{
+  "name": "lp-monitor-ciga",
+  "version": "1.0.0",
+  "description": "Monitoramento da LP Revendedores CIGA design — página no ar + formulário respondendo",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/run-monitor.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,51 @@
+name: Monitor LP Revendedores
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # O estado vive na branch "status" (sempre 1 commit, força push a
+      # cada rodada) — a main fica só com código, sem 288 commits/dia.
+      - name: Recupera estado anterior
+        run: |
+          mkdir -p status-data
+          if git fetch origin status --depth 1 2>/dev/null; then
+            for f in latest.json incidents.json history.json; do
+              git show "origin/status:$f" > "status-data/$f" 2>/dev/null || rm -f "status-data/$f"
+            done
+          fi
+
+      - name: Roda os checks
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node scripts/run-monitor.js
+
+      - name: Publica estado na branch status
+        run: |
+          cd status-data
+          git init -q -b status
+          git config user.name "lp-monitor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add .
+          git commit -qm "status $(date -u +%FT%TZ)"
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" status

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor · LP Revendedores CIGA design</title>
+<meta name="robots" content="noindex">
+<style>
+:root {
+  --bg: #050505; --card: #0d0d0f; --border: rgba(255,255,255,.09);
+  --accent: #2E7BC4; --gold: #C9A962; --ok: #2ecc71; --down: #e74c3c;
+  --text: #fff; --muted: #9a9a9a;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text); min-height: 100vh;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  padding: 2rem 1.25rem 4rem;
+}
+.wrap { max-width: 860px; margin: 0 auto; }
+header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.75rem; }
+header h1 { font-size: 1.05rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+header h1 span { color: var(--gold); }
+header a { color: var(--accent); font-size: .8rem; text-decoration: none; }
+header a:hover { text-decoration: underline; }
+
+.hero {
+  border: 1px solid var(--border); border-radius: 6px; background: var(--card);
+  padding: 2rem 1.5rem; text-align: center; margin-bottom: 1rem;
+}
+.hero .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: .6rem; vertical-align: baseline; }
+.hero.ok .dot { background: var(--ok); box-shadow: 0 0 14px var(--ok); }
+.hero.down .dot { background: var(--down); box-shadow: 0 0 14px var(--down); animation: pulse 1s infinite alternate; }
+.hero.wait .dot { background: var(--muted); }
+@keyframes pulse { to { opacity: .35; } }
+.hero h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; display: inline; }
+.hero p { color: var(--muted); font-size: .8rem; margin-top: .75rem; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+.card { border: 1px solid var(--border); border-radius: 6px; background: var(--card); padding: 1rem; }
+.card .name { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: .5rem; }
+.card .val { font-size: 1rem; font-weight: 700; }
+.card .val.ok { color: var(--ok); } .card .val.down { color: var(--down); }
+.card .ms { font-size: .72rem; color: var(--muted); margin-top: .3rem; }
+.card .err { font-size: .72rem; color: var(--down); margin-top: .35rem; line-height: 1.4; }
+
+.uptime { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-bottom: 1rem; }
+.uptime .card { text-align: center; }
+.uptime .val { font-size: 1.4rem; color: var(--gold); }
+
+.section-title { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 1.5rem 0 .6rem; }
+.bars { display: flex; gap: 2px; align-items: flex-end; height: 34px; }
+.bars i { flex: 1; border-radius: 1px; background: var(--ok); min-width: 2px; height: 100%; opacity: .85; }
+.bars i.down { background: var(--down); }
+.bars i.mix { background: var(--gold); }
+.bars i.nodata { background: #222; height: 40%; }
+.bars-legend { display: flex; justify-content: space-between; color: var(--muted); font-size: .65rem; margin-top: .35rem; }
+
+.incident { border: 1px solid var(--border); border-left: 3px solid var(--down); border-radius: 4px; background: var(--card); padding: .75rem 1rem; margin-bottom: .5rem; font-size: .8rem; }
+.incident.open { border-left-color: var(--gold); }
+.incident .when { color: var(--muted); font-size: .7rem; margin-bottom: .25rem; }
+.empty { color: var(--muted); font-size: .8rem; padding: .5rem 0; }
+
+.foot { margin-top: 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; color: #555; font-size: .68rem; letter-spacing: .06em; }
+.stale { color: var(--gold); }
+.stale.bad { color: var(--down); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Monitor · <span>LP Revendedores CIGA design</span></h1>
+    <a href="https://lp-revendedores-ciga.pages.dev" target="_blank" rel="noopener">abrir a LP ↗</a>
+  </header>
+
+  <div class="hero wait" id="hero">
+    <span class="dot"></span><h2 id="heroTitle">Verificando ao vivo…</h2>
+    <p id="heroSub">Consultando página e formulário agora, direto da Vercel.</p>
+  </div>
+
+  <div class="grid" id="checksGrid"></div>
+
+  <div class="section-title">Uptime (checks automáticos a cada 5 min via GitHub Actions)</div>
+  <div class="uptime">
+    <div class="card"><div class="name">24 horas</div><div class="val" id="up24">—</div></div>
+    <div class="card"><div class="name">7 dias</div><div class="val" id="up7">—</div></div>
+    <div class="card"><div class="name">30 dias</div><div class="val" id="up30">—</div></div>
+  </div>
+
+  <div class="section-title">Últimas 24 horas (por hora)</div>
+  <div class="bars" id="bars"></div>
+  <div class="bars-legend"><span>há 24h</span><span>agora</span></div>
+
+  <div class="section-title">Incidentes</div>
+  <div id="incidents"><div class="empty">Carregando…</div></div>
+
+  <div class="foot">
+    <span id="lastAuto">Último check automático: —</span>
+    <span>Atualiza sozinho a cada 60s</span>
+  </div>
+</div>
+
+<script>
+var RAW = 'https://raw.githubusercontent.com/muricoxt4/lp-monitor-ciga/status/';
+
+function fmtBR(iso) {
+  return new Date(iso).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  });
+}
+function duracao(ms) {
+  var min = Math.round(ms / 60000);
+  if (min < 60) return min + ' min';
+  return Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0');
+}
+
+/* ── Status ao vivo (roda os checks de verdade, na hora) ── */
+function liveStatus() {
+  var hero = document.getElementById('hero');
+  fetch('/api/status').then(function (r) { return r.json(); }).then(function (s) {
+    hero.className = 'hero ' + (s.ok ? 'ok' : 'down');
+    document.getElementById('heroTitle').textContent = s.ok ? 'Tudo no ar' : 'Problema detectado';
+    document.getElementById('heroSub').textContent = (s.ok
+      ? 'Página e formulário respondendo normalmente. '
+      : 'Um ou mais checks falharam agora — veja abaixo. ') + 'Verificado ao vivo às ' + fmtBR(s.timestamp) + ' (BRT).';
+
+    document.getElementById('checksGrid').innerHTML = s.checks.map(function (c) {
+      return '<div class="card"><div class="name">' + c.label + '</div>' +
+        '<div class="val ' + (c.ok ? 'ok">Operacional' : 'down">Falhou') + '</div>' +
+        '<div class="ms">' + c.ms + ' ms · ' + c.desc + '</div>' +
+        (c.ok ? '' : '<div class="err">' + (c.detail || '') + '</div>') + '</div>';
+    }).join('');
+  }).catch(function () {
+    hero.className = 'hero down';
+    document.getElementById('heroTitle').textContent = 'Dashboard sem resposta';
+    document.getElementById('heroSub').textContent = 'Não consegui rodar o check ao vivo. Recarregue a página.';
+  });
+}
+
+/* ── Histórico e incidentes (branch status, gravada pelo Actions) ── */
+function pct(list) {
+  if (!list.length) return null;
+  return (list.filter(function (h) { return h.ok; }).length / list.length * 100);
+}
+function fmtPct(v) {
+  if (v === null) return '—';
+  return (v >= 99.95 ? '100' : v.toFixed(v >= 99 ? 2 : 1)) + '%';
+}
+
+function historyData() {
+  Promise.all([
+    fetch(RAW + 'history.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }),
+    fetch(RAW + 'incidents.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }),
+    fetch(RAW + 'latest.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+  ]).then(function (res) {
+    var history = res[0], incidents = res[1], latest = res[2];
+    var now = Date.now();
+
+    [['up24', 1], ['up7', 7], ['up30', 30]].forEach(function (cfg) {
+      var win = history.filter(function (h) { return now - new Date(h.t).getTime() < cfg[1] * 864e5; });
+      document.getElementById(cfg[0]).textContent = fmtPct(pct(win));
+    });
+
+    // Barras por hora das últimas 24h
+    var bars = '';
+    for (var i = 23; i >= 0; i--) {
+      var from = now - (i + 1) * 36e5, to = now - i * 36e5;
+      var win = history.filter(function (h) { var t = new Date(h.t).getTime(); return t >= from && t < to; });
+      if (!win.length) { bars += '<i class="nodata" title="sem dados"></i>'; continue; }
+      var p = pct(win);
+      var cls = p === 100 ? '' : (p === 0 ? 'down' : 'mix');
+      bars += '<i class="' + cls + '" title="' + fmtPct(p) + '"></i>';
+    }
+    document.getElementById('bars').innerHTML = bars;
+
+    // Incidentes
+    var incEl = document.getElementById('incidents');
+    if (!incidents.length) {
+      incEl.innerHTML = '<div class="empty">Nenhum incidente registrado até agora. 🎉</div>';
+    } else {
+      incEl.innerHTML = incidents.slice(0, 20).map(function (inc) {
+        var open = !inc.end;
+        var dur = open ? 'em andamento' : duracao(new Date(inc.end) - new Date(inc.start));
+        return '<div class="incident' + (open ? ' open' : '') + '">' +
+          '<div class="when">' + fmtBR(inc.start) + (open ? ' · AINDA ABERTO' : ' · durou ' + dur) + '</div>' +
+          '<div>' + (inc.detail || (inc.failed || []).join(', ')) + '</div></div>';
+      }).join('');
+    }
+
+    // Idade do último check automático
+    var el = document.getElementById('lastAuto');
+    if (latest && latest.lastCheck) {
+      var age = now - new Date(latest.lastCheck).getTime();
+      var txt = 'Último check automático: ' + fmtBR(latest.lastCheck) + ' (BRT)';
+      if (age > 20 * 60000) {
+        el.innerHTML = '<span class="stale bad">⚠ ' + txt + ' — monitor atrasado há ' + duracao(age) + '</span>';
+      } else {
+        el.textContent = txt;
+      }
+    } else {
+      el.textContent = 'Último check automático: aguardando primeira execução';
+    }
+  }).catch(function () {
+    document.getElementById('incidents').innerHTML = '<div class="empty">Histórico indisponível no momento.</div>';
+  });
+}
+
+liveStatus();
+historyData();
+setInterval(function () { liveStatus(); historyData(); }, 60000);
+</script>
+</body>
+</html>
