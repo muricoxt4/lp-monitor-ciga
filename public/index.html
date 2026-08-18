@@ -23,6 +23,23 @@ header h1 { font-size: 1.05rem; font-weight: 600; letter-spacing: .08em; text-tr
 header h1 span { color: var(--gold); }
 header a { color: var(--accent); font-size: .8rem; text-decoration: none; }
 header a:hover { text-decoration: underline; }
+.header-actions { display: flex; align-items: center; gap: 1rem; }
+.refresh-btn {
+  background: var(--accent); color: #fff; border: 0; border-radius: 4px;
+  padding: .5rem 1.1rem; font-size: .75rem; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; cursor: pointer; transition: opacity .2s;
+}
+.refresh-btn:hover { opacity: .85; }
+.refresh-btn:disabled { opacity: .5; cursor: wait; }
+
+.hist-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+.hist-table th { text-align: left; color: var(--muted); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; padding: .45rem .6rem; border-bottom: 1px solid var(--border); }
+.hist-table td { padding: .45rem .6rem; border-bottom: 1px solid var(--border); }
+.hist-table tr:last-child td { border-bottom: 0; }
+.hist-wrap { border: 1px solid var(--border); border-radius: 6px; background: var(--card); overflow-x: auto; max-height: 340px; overflow-y: auto; }
+.badge { display: inline-block; padding: .15rem .55rem; border-radius: 3px; font-size: .68rem; font-weight: 700; letter-spacing: .05em; }
+.badge.ok { background: rgba(46,204,113,.15); color: var(--ok); }
+.badge.down { background: rgba(231,76,60,.15); color: var(--down); }
 
 .hero {
   border: 1px solid var(--border); border-radius: 6px; background: var(--card);
@@ -70,7 +87,10 @@ header a:hover { text-decoration: underline; }
 <div class="wrap">
   <header>
     <h1>Monitor · <span>LP Revendedores CIGA design</span></h1>
-    <a href="https://lp-revendedores-ciga.pages.dev" target="_blank" rel="noopener">abrir a LP ↗</a>
+    <div class="header-actions">
+      <a href="https://lp-revendedores-ciga.pages.dev" target="_blank" rel="noopener">abrir a LP ↗</a>
+      <button class="refresh-btn" id="refreshBtn">↻ Atualizar</button>
+    </div>
   </header>
 
   <div class="hero wait" id="hero">
@@ -93,6 +113,14 @@ header a:hover { text-decoration: underline; }
 
   <div class="section-title">Incidentes</div>
   <div id="incidents"><div class="empty">Carregando…</div></div>
+
+  <div class="section-title">Histórico de checks (automáticos, mais recentes primeiro)</div>
+  <div class="hist-wrap">
+    <table class="hist-table">
+      <thead><tr><th>Quando (BRT)</th><th>Status</th><th>Detalhe</th><th>Pior latência</th></tr></thead>
+      <tbody id="histBody"><tr><td colspan="4" class="empty">Carregando…</td></tr></tbody>
+    </table>
+  </div>
 
   <div class="foot">
     <span id="lastAuto">Último check automático: —</span>
@@ -117,7 +145,7 @@ function duracao(ms) {
 /* ── Status ao vivo (roda os checks de verdade, na hora) ── */
 function liveStatus() {
   var hero = document.getElementById('hero');
-  fetch('/api/status').then(function (r) { return r.json(); }).then(function (s) {
+  return fetch('/api/status').then(function (r) { return r.json(); }).then(function (s) {
     hero.className = 'hero ' + (s.ok ? 'ok' : 'down');
     document.getElementById('heroTitle').textContent = s.ok ? 'Tudo no ar' : 'Problema detectado';
     document.getElementById('heroSub').textContent = (s.ok
@@ -148,7 +176,7 @@ function fmtPct(v) {
 }
 
 function historyData() {
-  Promise.all([
+  return Promise.all([
     fetch(RAW + 'history.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }),
     fetch(RAW + 'incidents.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }),
     fetch(RAW + 'latest.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
@@ -187,6 +215,23 @@ function historyData() {
       }).join('');
     }
 
+    // Tabela de histórico de checks (últimos 60 registros)
+    var LABELS = { pagina: 'Página no ar', assets: 'Assets críticos', form_get: 'Receptor de leads', form_post: 'Envio do formulário' };
+    var histBody = document.getElementById('histBody');
+    if (!history.length) {
+      histBody.innerHTML = '<tr><td colspan="4" class="empty">Aguardando as primeiras execuções…</td></tr>';
+    } else {
+      histBody.innerHTML = history.slice(-60).reverse().map(function (h) {
+        var msMax = h.ms ? Math.max.apply(null, Object.keys(h.ms).map(function (k) { return h.ms[k]; })) : null;
+        var detalhe = h.ok ? '4/4 checks passaram'
+          : 'Falhou: ' + (h.f || []).map(function (id) { return LABELS[id] || id; }).join(', ');
+        return '<tr><td>' + fmtBR(h.t) + '</td>' +
+          '<td><span class="badge ' + (h.ok ? 'ok">OK' : 'down">FALHA') + '</span></td>' +
+          '<td>' + detalhe + '</td>' +
+          '<td>' + (msMax !== null ? msMax + ' ms' : '—') + '</td></tr>';
+      }).join('');
+    }
+
     // Idade do último check automático
     var el = document.getElementById('lastAuto');
     if (latest && latest.lastCheck) {
@@ -204,6 +249,18 @@ function historyData() {
     document.getElementById('incidents').innerHTML = '<div class="empty">Histórico indisponível no momento.</div>';
   });
 }
+
+/* ── Botão de atualização manual ── */
+var refreshBtn = document.getElementById('refreshBtn');
+function refreshAll() {
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = 'Atualizando…';
+  Promise.allSettled([liveStatus(), historyData()]).then(function () {
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = '↻ Atualizar';
+  });
+}
+refreshBtn.addEventListener('click', refreshAll);
 
 liveStatus();
 historyData();

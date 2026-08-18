@@ -24,7 +24,7 @@ Falha só vira alerta depois de 1 retry com 20 s de espera (oscilação de rede 
 - 🔴 caiu → alerta imediato com o(s) check(s) que falharam
 - 🔴 continua fora → lembrete a cada 30 min
 - 🟢 voltou → aviso de recuperação com a duração da queda
-- ✅ resumo diário às 08h (BRT) com o uptime das últimas 24h (confirma que o próprio monitor está vivo)
+- ✅ pulso a cada 1 hora confirmando que está tudo no ar (com uptime 24h — também confirma que o próprio monitor está vivo)
 
 Configuração: secrets `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` no repositório (Settings → Secrets and variables → Actions). Sem os secrets, o monitor roda normalmente e só registra a mensagem no log.
 

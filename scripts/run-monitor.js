@@ -22,7 +22,6 @@ import { runChecks } from '../lib/checks.js';
 const DATA_DIR = 'status-data';
 const HISTORY_DAYS = 30;
 const REMINDER_MS = 30 * 60 * 1000;
-const DAILY_UTC_HOUR = 11; // 08:00 em Brasília
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -84,7 +83,7 @@ const state = {
   checks: result.checks,
   since: prev && prev.ok === result.ok ? prev.since : nowIso,
   lastAlertAt: prev?.lastAlertAt || null,
-  lastDailyAt: prev?.lastDailyAt || null
+  lastHourlyAt: prev?.lastHourlyAt || null
 };
 
 const wasOk = prev ? prev.ok : true;
@@ -123,16 +122,19 @@ if (wasOk && !result.ok) {
   );
 }
 
-// Resumo diário às 08h BRT (1x por dia), só quando está tudo em pé
-const hojeUtc = nowIso.slice(0, 10);
-if (result.ok && new Date().getUTCHours() >= DAILY_UTC_HOUR && state.lastDailyAt !== hojeUtc) {
-  state.lastDailyAt = hojeUtc;
+// Pulso horário: 1 mensagem por hora confirmando que está tudo em pé.
+// Quando está fora do ar, quem fala são os lembretes de 30 min acima —
+// o pulso não duplica aviso de problema.
+const horaAtual = nowIso.slice(0, 13); // ex.: "2026-08-18T12"
+if (result.ok && state.lastHourlyAt !== horaAtual) {
+  state.lastHourlyAt = horaAtual;
   const dia = history.filter((h) => now - new Date(h.t).getTime() < 24 * 3600 * 1000);
   const upPct = dia.length ? ((dia.filter((h) => h.ok).length / dia.length) * 100).toFixed(1) : '100.0';
+  const msMax = Math.max(...result.checks.map((c) => c.ms));
   await telegram(
-    `✅ <b>Resumo diário — LP Revendedores CIGA</b>\n\n` +
-    `Página e formulário no ar. Uptime nas últimas 24h: <b>${upPct}%</b> (${dia.length} verificações).\n` +
-    `O monitor está ativo — se algo cair, você fica sabendo aqui.`
+    `✅ <b>Tudo OK — LP Revendedores CIGA</b> · ${horaBrasil(nowIso)}\n\n` +
+    `Página no ar e formulário respondendo (pior latência: ${msMax} ms).\n` +
+    `Uptime 24h: <b>${upPct}%</b> · 📊 https://lp-monitor-ciga.vercel.app`
   );
 }
 
