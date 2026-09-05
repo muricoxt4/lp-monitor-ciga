@@ -1,0 +1,53 @@
+[
+  {
+    "start": "2026-09-01T23:36:34.128Z",
+    "end": "2026-09-02T01:21:06.849Z",
+    "failed": [
+      "Receptor de leads",
+      "Envio do formulário"
+    ],
+    "detail": "Receptor de leads: timeout (20s) · Envio do formulário: timeout (20s)"
+  },
+  {
+    "start": "2026-08-26T23:18:02.673Z",
+    "end": "2026-08-27T04:32:39.192Z",
+    "failed": [
+      "Receptor de leads"
+    ],
+    "detail": "Receptor de leads: timeout (20s)"
+  },
+  {
+    "start": "2026-08-26T18:11:45.767Z",
+    "end": "2026-08-26T20:00:32.583Z",
+    "failed": [
+      "Receptor de leads"
+    ],
+    "detail": "Receptor de leads: timeout (20s)"
+  },
+  {
+    "start": "2026-08-26T06:04:54.107Z",
+    "end": "2026-08-26T08:30:35.546Z",
+    "failed": [
+      "Receptor de leads",
+      "Envio do formulário"
+    ],
+    "detail": "Receptor de leads: timeout (20s) · Envio do formulário: timeout (20s)"
+  },
+  {
+    "start": "2026-08-26T05:00:20.341Z",
+    "end": "2026-08-26T05:37:46.601Z",
+    "failed": [
+      "Receptor de leads",
+      "Envio do formulário"
+    ],
+    "detail": "Receptor de leads: timeout (20s) · Envio do formulário: timeout (20s)"
+  },
+  {
+    "start": "2026-08-24T16:02:59.454Z",
+    "end": "2026-08-24T16:49:01.950Z",
+    "failed": [
+      "Envio do formulário"
+    ],
+    "detail": "Envio do formulário: HTTP 404"
+  }
+]
