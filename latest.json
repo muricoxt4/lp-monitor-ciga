@@ -1,0 +1,37 @@
+{
+  "lastCheck": "2026-10-03T12:44:21.048Z",
+  "ok": true,
+  "checks": [
+    {
+      "id": "pagina",
+      "label": "Página no ar",
+      "desc": "LP responde 200 com o formulário presente",
+      "ok": true,
+      "ms": 372
+    },
+    {
+      "id": "assets",
+      "label": "Assets críticos",
+      "desc": "script.js (com URL de envio) e style.css publicados",
+      "ok": true,
+      "ms": 341
+    },
+    {
+      "id": "form_get",
+      "label": "Receptor de leads",
+      "desc": "Apps Script vivo e respondendo",
+      "ok": true,
+      "ms": 1248
+    },
+    {
+      "id": "form_post",
+      "label": "Envio do formulário",
+      "desc": "POST completo no endpoint (via honeypot, sem gravar lead)",
+      "ok": true,
+      "ms": 15679
+    }
+  ],
+  "since": "2026-09-28T19:36:32.930Z",
+  "lastAlertAt": null,
+  "lastHourlyAt": "2026-10-03T12"
+}
